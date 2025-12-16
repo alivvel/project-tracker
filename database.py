@@ -89,3 +89,14 @@ def actualizar_database(estado, calificacion, resena, idd):
     
     conexion.commit()
     conexion.close()    
+
+def filtrar_pendientes_db():
+    conexion = sqlite3.connect(DB_PATH)
+    cursor = conexion.cursor()
+    cursor.execute("""SELECT categoria, nombre, genero FROM media""")
+    
+    pendientes = cursor.fetchall()
+    
+    conexion.commit()
+    conexion.close()
+    return pendientes

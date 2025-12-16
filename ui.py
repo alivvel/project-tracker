@@ -12,7 +12,9 @@ class App:
         root.grid_columnconfigure(0, weight=1)
         root.grid_columnconfigure(1, weight=1)
         root.grid_columnconfigure(2, weight=1)
-        root.grid_columnconfigure(3, weight=1)
+        
+        boton_que_veo_ahora = tk.Button(self.root, text = "¿Que veo ahora?", command=self.abrir_ventana_queVeoAhora, fg = "white", bg = "red")
+        boton_que_veo_ahora.grid(row= 0, column= 2, padx=10, pady=10)
         
         self.crear_formulario()
         self.crear_treeview()
@@ -24,9 +26,10 @@ class App:
 
 
         form_frame = tk.Frame(self.root, bg="#FFD1FF", bd=2, relief="groove")
-        form_frame.grid(row=0, column=1, columnspan=2, padx=5, pady=5)
+        form_frame.grid(row=0, column=0, columnspan=2, padx=5, pady=5)
         form_frame.grid_columnconfigure(0, weight=1)
         form_frame.grid_columnconfigure(1, weight=2)
+        form_frame.grid_columnconfigure(2, weight=1)
 
         #0 
         label_categoria = tk.Label(form_frame, text = "Categoria" , **label_style) 
@@ -80,7 +83,7 @@ class App:
         #creo que el boton
         boton_guardar = tk.Button(form_frame, text = "GUARDAR", command=self.guardar_registro, fg =  "#F9F9F9", bg = "#E931EF" )
         boton_guardar.grid(row=6, column=0, columnspan=2, padx=10, pady=10)
-      
+           
     def guardar_registro(self):
         #guardo las variables
         categoria = self.combo_categoria.get()
@@ -121,7 +124,7 @@ class App:
         #creo un treeView con frame
         frame_tree = tk.Frame(self.root)
         frame_tree.configure(bg = '#FDB3FF')
-        frame_tree.grid(row=1, column=0, columnspan=4, padx=10, pady=10, sticky="w")
+        frame_tree.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky="w")
         frame_tree.grid_rowconfigure(0, weight=1)
         frame_tree.grid_columnconfigure(0, weight=1)
         frame_tree.grid_columnconfigure(1, weight=1)
@@ -129,7 +132,7 @@ class App:
         frame_tree.grid_columnconfigure(3, weight=1)
         
         self.tree = ttk.Treeview(frame_tree, columns=("Categoria", "Nombre", "Genero", "Estado", "Calificacion", "Reseña"), show= "headings")
-        self.tree.grid(row=0, column=0, columnspan=4, sticky="nsew")
+        self.tree.grid(row=0, column=0, columnspan=3, sticky="nsew")
 
         colums = ["Categoria", "Nombre", "Genero", "Estado", "Calificacion", "Reseña"]
         for c in colums:
@@ -165,6 +168,11 @@ class App:
         ##guardo el objeto porque py lo elimina automaticamente objetos sin referencia
         self.ventana_actualizar = VentanaActualizar(self)
   
+    def abrir_ventana_queVeoAhora(self):
+        lista_filtrada = filtrar_pendientes_db()
+        self.ventana_filtros = VentanaQueVeoAhora(self, lista_filtrada)
+        
+        
 class VentanaActualizar:
     def __init__(self, master_app):
         self.master_app = master_app #tengo acceso a todo lo de App usando master_app(que es el self de App)
@@ -177,7 +185,6 @@ class VentanaActualizar:
         #no puedo tocar la ventana principal hasta cerrar la secuntaria
         self.ventana.transient(master_app.root)  # depende de la principal
         self.ventana.grab_set()                  # bloquea interacción con la principal
-
 
     def formulario_actualizar(self):
         #valido
@@ -228,7 +235,6 @@ class VentanaActualizar:
         boton_actualizar = tk.Button(self.ventana, text="Actualizar", command=self.guardar_actualizacion, fg =  "#F9F9F9", bg = "#E931EF")
         boton_actualizar.grid(row = 6, column=0, columnspan=2, padx=10, pady=5 )
         
-    
     def guardar_actualizacion(self):
         #valido que no tengo esta misma ventana abierta
         
@@ -251,3 +257,75 @@ class VentanaActualizar:
         
         self.ventana.destroy()
     
+class VentanaQueVeoAhora:
+    def __init__(self, master_app, lista_filtrada):
+        self.master_app = master_app
+        self.lista_filtrada = lista_filtrada
+        
+        self.top = tk.Toplevel(master_app.root)
+        self.top.title("¿Que veo ahora?")
+        self.top.configure(bg = "#AEC6CF")       
+        
+        self.vista_filtros()
+        self.vista_tree()
+        
+        self.top.transient(master_app.root)
+        self.top.grab_set()
+    
+    def vista_tree(self):
+        tree_frame = tk.Frame(self.top)
+        tree_frame.grid(row=1, column=0, columnspan=4, padx=10, pady=10, sticky="w")
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(1, weight=1)
+
+        colums = ["Categoria", "Nombre", "Genero"]
+        self.mini_tree = ttk.Treeview(tree_frame, columns=colums, show= "headings" )
+        self.mini_tree.grid(row=0, column=0, columnspan=4, sticky="nsew")
+        
+        for c in colums:
+            self.mini_tree.heading(c, text=c) 
+            self.mini_tree.column(c, width=100, anchor="center")
+        
+        #como es un treeview de solo vista no necesito poner ids
+        for fila in self.lista_filtrada:
+            self.mini_tree.insert("", tk.END,values=fila)      
+            
+    def vista_filtros(self):
+        label_style = {"bg" : "#FFD1FF", "fg" : "#F01CF7"} 
+        
+        #frame de filtros combox
+        frame_filtros = tk.Frame(self.top)
+        frame_filtros.grid(row=0, column=0, columnspan=4, padx=10, pady=10, sticky="w")
+        
+        tk.Label(frame_filtros, text = "Genero" , **label_style).grid(row=0, column=0, padx=10, pady=5) 
+        
+        self.filtro_genero = ttk.Combobox(
+            frame_filtros,                     
+            values=["Romance", "Fantasia", "Drama", "Bl", "Ciencia Ficcion", "Thriller"],
+            state="readonly"           
+        )
+        self.filtro_genero.grid(row=0, column=1, padx=10, pady=5)
+        
+        boton_filtrar = tk.Button(frame_filtros, text="filtrar", command=self.filtrar_por_genero, fg = "white", bg = "red")
+        boton_filtrar.grid(row=0, column=2, padx=10, pady=10)      
+    
+    def filtrar_por_genero(self):
+        
+        genero_a_filtrar= self.filtro_genero.get()
+        #hago en el filtro directamente en mi lista sin consultar a la db
+        lista_filtrada_por_genero = []
+        
+        for registro in self.lista_filtrada:
+            genero = registro[2]
+            if genero == genero_a_filtrar:     
+                lista_filtrada_por_genero.append(registro)
+        
+        #ahora vacio el mini tree view
+            for fila in self.mini_tree.get_children():
+                self.mini_tree.delete(fila)
+
+        #agrego la nueva lista filtrada
+            for fila in lista_filtrada_por_genero:
+                self.mini_tree.insert("", tk.END,values=fila)      
+            
