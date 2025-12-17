@@ -264,7 +264,7 @@ class VentanaQueVeoAhora:
         
         self.top = tk.Toplevel(master_app.root)
         self.top.title("¿Que veo ahora?")
-        self.top.configure(bg = "#AEC6CF")       
+        self.top.configure(bg = "#FFD1FF")       
         
         self.vista_filtros()
         self.vista_tree()
@@ -292,40 +292,81 @@ class VentanaQueVeoAhora:
             self.mini_tree.insert("", tk.END,values=fila)      
             
     def vista_filtros(self):
-        label_style = {"bg" : "#FFD1FF", "fg" : "#F01CF7"} 
+        label_style = { "bg" : "#FFD1FF", "fg" : "#F01CF7"} 
         
         #frame de filtros combox
-        frame_filtros = tk.Frame(self.top)
+        frame_filtros = tk.Frame(self.top, bg="#FFD1FF")
         frame_filtros.grid(row=0, column=0, columnspan=4, padx=10, pady=10, sticky="w")
         
-        tk.Label(frame_filtros, text = "Genero" , **label_style).grid(row=0, column=0, padx=10, pady=5) 
+        tk.Label(frame_filtros, text="Tenes todas estas peliculas, serie y libros pendientes", **label_style).grid(row=0, column=0, columnspan=3, padx=10, pady=5)
+        tk.Label(frame_filtros, text="Categoria", **label_style).grid(row=1, column=0, padx=10, pady=5)
+        tk.Label(frame_filtros, text = "Genero" , **label_style).grid(row=2, column=0, padx=10, pady=5) 
+        
+        self.filtro_categoria = ttk.Combobox(
+            frame_filtros,                     
+            values=["Película", "Serie", "Libro", "Manga"],
+            state="readonly"           
+        )
+        self.filtro_categoria.grid(row=1, column=1, padx=10, pady=5)
         
         self.filtro_genero = ttk.Combobox(
             frame_filtros,                     
             values=["Romance", "Fantasia", "Drama", "Bl", "Ciencia Ficcion", "Thriller"],
             state="readonly"           
         )
-        self.filtro_genero.grid(row=0, column=1, padx=10, pady=5)
+        self.filtro_genero.grid(row=2, column=1, padx=10, pady=5)
         
         boton_filtrar = tk.Button(frame_filtros, text="filtrar", command=self.filtrar_por_genero, fg = "white", bg = "red")
-        boton_filtrar.grid(row=0, column=2, padx=10, pady=10)      
+        boton_filtrar.grid(row=1, column=2, padx=10, pady=10)      
+        boton_limpiar = tk.Button(frame_filtros, text="Limpiar", command=self.limpiar_filtro, fg = "white", bg = "red")
+        boton_limpiar.grid(row=2, column=2, padx=10, pady=10)      
     
     def filtrar_por_genero(self):
-        
+        categoria_a_filtrar= self.filtro_categoria.get()
         genero_a_filtrar= self.filtro_genero.get()
-        #hago en el filtro directamente en mi lista sin consultar a la db
-        lista_filtrada_por_genero = []
+        #valido
+        if not genero_a_filtrar and not categoria_a_filtrar:
+            messagebox.showwarning("Error", "Seleccione una categoria o genero a filtrar")
+            return
         
-        for registro in self.lista_filtrada:
-            genero = registro[2]
-            if genero == genero_a_filtrar:     
-                lista_filtrada_por_genero.append(registro)
+        #hago en el filtro directamente la liosta que me pasaron sin consultar a la db
+        lista_sub_filtrada = []
         
+        if categoria_a_filtrar and not genero_a_filtrar: #filtro solo x categoria
+            for registro in self.lista_filtrada:
+                categoria = registro[0]
+                if categoria == categoria_a_filtrar:
+                    lista_sub_filtrada.append(registro)
+                    
+        elif genero_a_filtrar and not categoria_a_filtrar: #solo filtro x genero
+            for registro in self.lista_filtrada:
+                genero = registro[2]
+                if genero == genero_a_filtrar:     
+                    lista_sub_filtrada.append(registro)
+                    
+        else: #filtro x categoria y genero
+            for registro in self.lista_filtrada:
+                if registro[0] == categoria_a_filtrar and registro[2] == genero_a_filtrar:
+                    lista_sub_filtrada.append(registro)
+                    
+        #cuando ya tengo la lista sub filtrada, actualizo el tree view    
         #ahora vacio el mini tree view
-            for fila in self.mini_tree.get_children():
-                self.mini_tree.delete(fila)
+        for fila in self.mini_tree.get_children():
+            self.mini_tree.delete(fila)
 
         #agrego la nueva lista filtrada
-            for fila in lista_filtrada_por_genero:
-                self.mini_tree.insert("", tk.END,values=fila)      
+        for fila in lista_sub_filtrada:
+            self.mini_tree.insert("", tk.END,values=fila)      
+            
+    def limpiar_filtro(self):
+        #cuando ya tengo la lista sub filtrada, actualizo el tree view    
+        #ahora vacio el mini tree view
+        for fila in self.mini_tree.get_children():
+            self.mini_tree.delete(fila)
+
+        #agrego la nueva lista filtrada
+        for fila in self.lista_filtrada:
+            self.mini_tree.insert("", tk.END,values=fila)      
+                
+    
             
